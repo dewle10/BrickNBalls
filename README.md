@@ -5,6 +5,7 @@ Breakout inspired game built with **Unity DOTS**.
 * **Core:** Unity ECS, C# Job System, Burst Compiler.
 * **physics:** Unity Physics.
 * **Render:** URP.
+* **Backend:** IL2CPP.
 
 ## Controls
 * **A / D:** Aim
