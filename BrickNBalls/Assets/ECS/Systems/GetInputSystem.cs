@@ -1,8 +1,4 @@
 using Unity.Entities;
-using Unity.VisualScripting;
-using UnityEngine;
-using UnityEngine.InputSystem;
-
 
 [UpdateInGroup(typeof(InitializationSystemGroup), OrderLast = true)]
 public partial class GetInputSystem : SystemBase

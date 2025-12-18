@@ -20,6 +20,7 @@ public struct CompanionPrefab : IComponentData
 public struct CompanionInstance : IComponentData
 {
     public UnityObjectRef<GameObject> Instance;
+    public UnityObjectRef<Renderer> Renderer;
 }
 public struct CompanionStaticTag : IComponentData
 {

@@ -1,17 +1,26 @@
-using Unity.Entities;
 using Unity.Collections;
-using UnityEngine;
+using Unity.Entities;
 using Unity.Transforms;
+using UnityEngine;
 
 [UpdateInGroup(typeof(PresentationSystemGroup))]
 public partial class GoCompanionInstSystem : SystemBase
 {
+    protected override void OnCreate()
+    {
+        RequireForUpdate(
+            SystemAPI.QueryBuilder()
+                .WithAll<CompanionPrefab>()
+                .WithNone<CompanionInstance>()
+                .Build()
+        );
+    }
     protected override void OnUpdate()
     {
         var ecb = new EntityCommandBuffer(Allocator.Temp);
 
         foreach (var (prefab, ltw, entity)
-                 in SystemAPI.Query<RefRO<CompanionPrefab>, RefRW<LocalToWorld>>()
+                 in SystemAPI.Query<RefRO<CompanionPrefab>, RefRO<LocalToWorld>>()
                               .WithNone<CompanionInstance>()
                               .WithEntityAccess())
         {
@@ -23,7 +32,8 @@ public partial class GoCompanionInstSystem : SystemBase
 
             ecb.AddComponent(entity, new CompanionInstance
             {
-                Instance = instance
+                Instance = instance,
+                Renderer = instance.GetComponent<Renderer>()
             });
 
             instance.transform.SetPositionAndRotation(

@@ -1,8 +1,5 @@
 using Unity.Entities;
-using Unity.Mathematics;
-using Unity.Physics;
 using UnityEngine;
-using static BrickSpawnerAuthoring;
 
 class BallAuthoring : MonoBehaviour
 {

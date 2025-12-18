@@ -4,6 +4,11 @@ using UnityEngine;
 [UpdateInGroup(typeof(PresentationSystemGroup))]
 public partial class CleanupSystem : SystemBase
 {
+    protected override void OnCreate()
+    {
+        RequireForUpdate<DestroyTag>();
+    }
+
     protected override void OnUpdate()
     {
         var ecb = new EntityCommandBuffer(Unity.Collections.Allocator.Temp);

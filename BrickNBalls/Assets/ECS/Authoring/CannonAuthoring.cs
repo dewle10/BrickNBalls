@@ -1,13 +1,11 @@
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Rendering;
 using UnityEngine;
 
 public class CannonAuthoring : MonoBehaviour
 {
     public GameObject BallPrefab;
     public float BallSpeed = 20f;
-    public int BallAmount = 10;
     public float AimSpeed = 1f;
     public float3 SpawnPoint;
     public float MaxYAngle = 86f;
@@ -22,7 +20,6 @@ public class CannonAuthoring : MonoBehaviour
             {
                 BallPrefab = GetEntity(authoring.BallPrefab, TransformUsageFlags.Dynamic),
                 BallSpeed = authoring.BallSpeed,
-                BallAmount = authoring.BallAmount,
                 AimSpeed = authoring.AimSpeed,
                 SpawnPoint = authoring.SpawnPoint,
                 LastFireTime = 0,
@@ -37,7 +34,6 @@ public struct Cannon : IComponentData
 {
     public Entity BallPrefab;
     public float BallSpeed;
-    public int BallAmount;
     public float AimSpeed;
     public float3 SpawnPoint;
     public double LastFireTime;

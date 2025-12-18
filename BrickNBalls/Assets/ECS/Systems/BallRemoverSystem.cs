@@ -1,7 +1,10 @@
 using Unity.Burst;
 using Unity.Entities;
+using Unity.Physics.Systems;
 using Unity.Transforms;
 
+[UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
+[UpdateAfter(typeof(PhysicsSystemGroup))]
 public partial struct BallRemoverSystem : ISystem
 {
     [BurstCompile]
@@ -13,17 +16,18 @@ public partial struct BallRemoverSystem : ISystem
     [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
+        var gameState = SystemAPI.GetSingletonRW<GameState>();
         var ecbSingleton = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>();
         var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged);
-        float removeBorderZ = -22.0f;
 
         foreach (var (transform, entity) in SystemAPI.Query<RefRO<LocalTransform>>()
                  .WithAll<Ball>()
                  .WithEntityAccess())
         {
-            if (transform.ValueRO.Position.z < removeBorderZ)
+            if (transform.ValueRO.Position.z < gameState.ValueRO.RemoveBorder)
             {
-                ecb.AddComponent<DestroyTag>(entity);
+                //CleanupSystem destroys entity with DestroyTag along with their gameobject companion
+                ecb.AddComponent<DestroyTag>(entity);  
             }
         }
     }

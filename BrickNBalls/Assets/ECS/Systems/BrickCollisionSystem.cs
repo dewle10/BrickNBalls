@@ -7,7 +7,7 @@ using Unity.Physics.Systems;
 
 [UpdateInGroup(typeof(FixedStepSimulationSystemGroup))]
 [UpdateAfter(typeof(PhysicsSystemGroup))]
-public partial struct BallBrickCollisionSystem : ISystem
+public partial struct BrickCollisionSystem : ISystem
 {
     [BurstCompile]
     public void OnCreate(ref SystemState state)
@@ -15,16 +15,18 @@ public partial struct BallBrickCollisionSystem : ISystem
         state.RequireForUpdate<Ball>();
     }
 
+    [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
+        var gameState = SystemAPI.GetSingletonRW<GameState>();
         var simSingleton = SystemAPI.GetSingleton<SimulationSingleton>();
         var ecbSingleton = SystemAPI.GetSingleton<EndFixedStepSimulationEntityCommandBufferSystem.Singleton>();
         var ecb = ecbSingleton.CreateCommandBuffer(state.WorldUnmanaged);
 
         double currentTime = SystemAPI.Time.ElapsedTime;
 
-        var scoreCounter = new NativeReference<int>(Allocator.TempJob);
-        scoreCounter.Value = 0;
+        var scoreCounter = new NativeReference<int>(Allocator.TempJob){Value = 0};
+        var hitsCounter = new NativeReference<int>(Allocator.TempJob) {Value = 0};
 
         var job = new CollisionJob
         {
@@ -33,19 +35,21 @@ public partial struct BallBrickCollisionSystem : ISystem
             VelocityLookup = SystemAPI.GetComponentLookup<PhysicsVelocity>(false),
             Ecb = ecb,
             CurrentTime = currentTime,
-            ScoreCounter = scoreCounter
+            ScoreCounter = scoreCounter,
+            HitsCounter = hitsCounter
         };
 
         state.Dependency = job.Schedule(simSingleton, state.Dependency);
         state.Dependency.Complete();
 
-        if (SystemAPI.HasSingleton<Score>())
+        if(hitsCounter.Value > 0)
         {
-            var scoreValue = SystemAPI.GetSingletonRW<Score>();
-            scoreValue.ValueRW.Points += scoreCounter.Value;
+            gameState.ValueRW.Score += scoreCounter.Value;
+            gameState.ValueRW.HitsThisFrame = hitsCounter.Value;
         }
 
         scoreCounter.Dispose();
+        hitsCounter.Dispose();
     }
 
     [BurstCompile]
@@ -58,6 +62,7 @@ public partial struct BallBrickCollisionSystem : ISystem
         public EntityCommandBuffer Ecb;
         public double CurrentTime;
         public NativeReference<int> ScoreCounter;
+        public NativeReference<int> HitsCounter;
 
         public void Execute(CollisionEvent collisionEvent)
         {
@@ -70,6 +75,7 @@ public partial struct BallBrickCollisionSystem : ISystem
             if (BallLookup.HasComponent(entityA))
             {
                 ballEntity = entityA;
+                HitsCounter.Value++;
             }
             else if (BrickLookup.HasComponent(entityA))
             {
@@ -78,11 +84,14 @@ public partial struct BallBrickCollisionSystem : ISystem
 
             if (BallLookup.HasComponent(entityB))
             {
-                if (ballEntity == Entity.Null) ballEntity = entityB;
+                HitsCounter.Value++;
+                if (ballEntity == Entity.Null) 
+                    ballEntity = entityB;
             }
             else if (BrickLookup.HasComponent(entityB))
             {
-                if (brickEntity == Entity.Null) brickEntity = entityB;
+                if (brickEntity == Entity.Null) 
+                    brickEntity = entityB;
             }
 
             if (ballEntity != Entity.Null && brickEntity != Entity.Null)
@@ -90,21 +99,7 @@ public partial struct BallBrickCollisionSystem : ISystem
                 HandleBallBrickColl(brickEntity);
             }
 
-            if (ballEntity != Entity.Null && VelocityLookup.HasComponent(ballEntity))
-            {
-                var physicsVel = VelocityLookup[ballEntity];
-                var ballData = BallLookup[ballEntity];
-
-                float3 currentLinear = physicsVel.Linear;
-                currentLinear.y = 0f;
-
-                if (math.lengthsq(currentLinear) > 0.001f)
-                {
-                    float3 direction = math.normalize(currentLinear);
-                    physicsVel.Linear = direction * ballData.TargetSpeed;
-                    VelocityLookup[ballEntity] = physicsVel;
-                }
-            }
+            ResetBallVelocity(ballEntity);
         }
 
         private void HandleBallBrickColl(Entity brickEntity)
@@ -130,6 +125,23 @@ public partial struct BallBrickCollisionSystem : ISystem
             else
             {
                 BrickLookup[brickEntity] = brick;
+            }
+        }
+        private void ResetBallVelocity(Entity ballEntity)
+        {
+            if (ballEntity != Entity.Null && VelocityLookup.HasComponent(ballEntity))
+            {
+                var physicsVel = VelocityLookup[ballEntity];
+                var ballData = BallLookup[ballEntity];
+
+                float3 currentLinear = physicsVel.Linear;
+                currentLinear.y = 0f;
+                if (math.lengthsq(currentLinear) > 0.001f)
+                {
+                    float3 direction = math.normalize(currentLinear);
+                    physicsVel.Linear = direction * ballData.TargetSpeed;
+                    VelocityLookup[ballEntity] = physicsVel;
+                }
             }
         }
     }

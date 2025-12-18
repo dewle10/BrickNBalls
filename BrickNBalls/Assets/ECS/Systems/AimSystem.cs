@@ -29,10 +29,4 @@ partial struct AimSystem : ISystem
             transform.ValueRW.Rotation = quaternion.RotateY(newAngle);
         }
     }
-
-    [BurstCompile]
-    public void OnDestroy(ref SystemState state)
-    {
-        
-    }
 }
